@@ -1,0 +1,11 @@
+# Video files (large — download locally, never commit)
+channels/*/videos/
+channels/*/output/
+
+# Temp files
+*.tmp
+concat_temp.txt
+
+# OS
+Thumbs.db
+.DS_Store
