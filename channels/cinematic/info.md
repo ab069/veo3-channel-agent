@@ -21,7 +21,7 @@
 | 1 | AI Cinematic Short Films | Complete narrative films with beginning, middle, end. Evoke wonder, loss, hope, mystery. | 360 (Batches 1–2) |
 | 2 | World-Building Showcases | Full civilizations, environments, alien worlds. Ambient/lore narration. | 180 (Batch 3) |
 | 3 | AI vs Imagination Series | "What if AI imagined [X]?" — curiosity-driven, high shareability | 180 (Batch 4) |
-| 4 | Emotional Storytelling Shorts | 2–4 scene shorts with powerful hooks. Portrait 9:16. | 180 (Batches 5–10) |
+| 4 | Widescreen anthology & Shorts source | Six thematic movements (still landscape prompts **721–900**); same scenes trim to ~24 s Shorts. | 180 (Batch **5** / scenes **721–900**) |
 
 ---
 
@@ -52,35 +52,28 @@
 
 ---
 
-## Content Distribution (900 Scenes)
+## Content Distribution (900 Scenes — Two Files, Same Numbers)
+
+| File | Role |
+|------|------|
+| **`prompts-long-videos.md`** | **Landscape 16:9** — five ~24 min films (`cinematic-long-01` … `05`, **180** scenes each). |
+| **`prompts-shorts.md`** | **Portrait 9:16 — Shorts only** — **30** veo3 packs (`cinematic-shorts-pack-01` … `30`), **30** prompts (~**4 min** raw) per pack → **10** Shorts (~**24 s**) each = **300** Shorts total. |
 
 ```
-Long Videos (Landscape 16:9):
-  Batch 1 → Short Film: "The Last Soul"              180 scenes → ~24 min
-  Batch 2 → Short Film: "Beyond the Stars"           180 scenes → ~24 min
-  Batch 3 → World Showcase: "Ancient AI Worlds"      180 scenes → ~24 min
-  Batch 4 → AI vs Imagination: "What AI Sees"        180 scenes → ~24 min
+Long Videos: prompts-long-videos.md → 5 × 180 scenes → ~24 min each (landscape)
 
-Shorts (Portrait 9:16 — trim into individual shorts after download):
-  Batch 5  → Shorts Set A (10 shorts × 3 scenes)     30 scenes
-  Batch 6  → Shorts Set B (10 shorts × 3 scenes)     30 scenes
-  Batch 7  → Shorts Set C (10 shorts × 3 scenes)     30 scenes
-  Batch 8  → Shorts Set D (10 shorts × 3 scenes)     30 scenes
-  Batch 9  → Shorts Set E (10 shorts × 3 scenes)     30 scenes
-  Batch 10 → Shorts Set F (10 shorts × 3 scenes)     30 scenes
-
-Total: 720 (long) + 180 (shorts) = 900 scenes
-Final Output: 4 long videos + 60 YouTube Shorts
+Shorts: prompts-shorts.md → 30 × 30 scenes → trim each download into 10 vertical Shorts
+        (3 prompts × 8s = 24s per Short). Optional: crop landscape exports instead.
 ```
 
 ---
 
 ## veo3.pk Settings Per Batch
 
-| Batch | Mode | Orientation | Writing Style | Transition |
-|-------|------|-------------|---------------|------------|
-| 1–4 | Prompts | Landscape 16:9 | Dramatic / Documentary | Fade In/Out |
-| 5–10 | Prompts | Portrait 9:16 | Dramatic | Fade In/Out |
+| Batch (project) | Mode | Orientation | Writing Style | Transition |
+|-----------------|------|-------------|---------------|------------|
+| cinematic-long-01 … 05 | Prompts | Landscape 16:9 | Dramatic / Documentary | Fade In/Out |
+| cinematic-shorts-pack-01 … 30 | Prompts | Portrait 9:16 | Dramatic / Documentary | Fade In/Out |
 
 **All batches**: Visual Type = Video Clips, Model = Google Flow VEO
 

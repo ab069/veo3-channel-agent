@@ -1,6 +1,12 @@
 # Video files (large — download locally, never commit)
 channels/*/videos/
 channels/*/output/
+channels/*/sessions/**/videos/
+channels/*/sessions/**/output/
+
+# Python
+**/__pycache__/
+*.pyc
 
 # Temp files
 *.tmp

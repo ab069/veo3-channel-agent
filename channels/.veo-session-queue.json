@@ -1,0 +1,13 @@
+{
+  "channel_order": [
+    "cinematic",
+    "ai-stack-daily",
+    "builders-notes",
+    "mind-vault",
+    "money-mosaic",
+    "ummah-talks",
+    "wild-plate",
+    "wildverse"
+  ],
+  "note": "All channels need only channels/{name}/info.md at start. Run /veo-session-shorts (or -long / -both) to generate sessions/ data."
+}
