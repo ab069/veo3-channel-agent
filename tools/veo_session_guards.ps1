@@ -39,9 +39,9 @@ if (-not (Test-Path $InfoPath)) {
     Add-Err "Missing info.md - run /veo-channel $Channel first."
 }
 
-# --- Guard 2: batch size ---
-if ($PlannedBatchSize -gt 30) {
-    Add-Err "PlannedBatchSize $PlannedBatchSize exceeds max 30 per chat turn."
+# --- Guard 2: batch size (per append still 10; per turn may loop many packs) ---
+if ($PlannedBatchSize -gt 90) {
+    Add-Err "PlannedBatchSize $PlannedBatchSize exceeds max 90 prompts per chat turn."
 }
 if ($PlannedBatchSize -lt 1) {
     Add-Err "PlannedBatchSize must be >= 1."

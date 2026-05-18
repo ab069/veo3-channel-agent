@@ -1,9 +1,48 @@
 # /veo-session-shorts — 900 portrait Shorts only
 
-Build **Shorts-only** session: `prompts-shorts.md` (900) + `youtube-metadata-shorts.md` (300) + plan.  
-**No** long prompts or long metadata in this mode.
+Build **Shorts-only** session: `prompts-shorts.md` (900) + `youtube-metadata-shorts.md` (300).
 
-**Shared rules:** read `.cursor/commands/veo-session-shared.md` (patches, veo3 format, resume).
+**Shared rules:** `.cursor/commands/veo-session-shared.md`
+
+---
+
+## The problem with “just keep going” in chat
+
+`/veo-session-shorts` is **instructions for the AI**. Each chat **reply ends** when the model stops typing — it is **not** a background job. Nothing in Cursor auto-runs the next 30 prompts unless **you** send another message (or a **script** loops).
+
+So “don’t stop at 30” in markdown **cannot** guarantee 900 in one chat; context limits still apply.
+
+---
+
+## What you want (run once → notify when 900 done)
+
+**Run this in the terminal** (PowerShell). It loops pack-by-pack (30 prompts → 10 metadata) until complete — **no `continue`**:
+
+```powershell
+cd D:\veo3
+.\tools\veo_session_auto.ps1 -Channel cinematic -Mode shorts
+```
+
+Or next channel from queue:
+
+```powershell
+.\tools\veo_session_auto.ps1 -Mode shorts
+```
+
+When it exits green, you get one message: **COMPLETE** (900 + 300). Then `/clear` and run again for the next channel.
+
+---
+
+## What the agent should do when you type `/veo-session-shorts`
+
+1. **Do not** hand-write 30 prompts and stop.
+2. Run guards; scaffold if needed.
+3. **Run `veo_session_auto.ps1`** for the channel (same command as above).
+4. Report the script’s final **COMPLETE** or error — only then end.
+
+Optional: user asked for **AI-crafted** packs only → then loop packs in chat (slow, may still need multiple chats). Default is **auto script**.
+
+---
 
 ## Usage
 
@@ -14,34 +53,18 @@ Build **Shorts-only** session: `prompts-shorts.md` (900) + `youtube-metadata-sho
 
 ## Mode: `shorts`
 
-| Phase | File | Target |
-|-------|------|--------|
-| 1 | `prompts-shorts.md` | 900 prompts (9:16) |
-| 2 | `youtube-metadata-shorts.md` | 300 Shorts |
+| Per pack | Prompts | Then |
+|----------|---------|------|
+| 1 veo3 pack | +30 | +10 Short metadata blocks |
+| Full session | ×30 packs | 900 + 300 |
 
-**Complete when:** both phases done. Then `/clear` → `/veo-session-shorts` for next channel.
+**Complete when:** auto script prints COMPLETE. Then `/clear` → next channel.
 
-## Steps
+## End message (agent)
 
-0. **Guards:** `.\tools\veo_session_guards.ps1 -Channel {ch} -Mode shorts` — if `Ok` is false, **stop**.
-1. `.\tools\veo_session_next_channel.ps1 -Mode shorts` (if no channel in message)
-2. If guards say `scaffold`: `.\tools\new_session_scaffold.ps1 -Channel {ch} -Mode shorts`
-3. Follow `$g.Phase` and `$g.NextBatchStart`–`$g.NextBatchEnd` only
-4. Work current `Phase` only — **10 prompts per append**, max **30** per turn
-5. Pack header every **30** prompts (`## Pack NN — {channel}-shorts-pack-NN`)
-6. Visual: portrait 9:16 + HOOK/RISE/LAND — see `docs/VEO3-PROMPT-SPEC.md`
-7. **Variety (mandatory):** each Short = 3 prompts with **3 different places**, **3 different camera moves**, **3 unique Voice lines**. Read last 9 prompts before each batch; **never** clone the previous Short. Full rules: **Shorts variety** section in `VEO3-PROMPT-SPEC.md`.
-8. Metadata phase: **`docs/YOUTUBE-METADATA-SPEC.md`** — unique title/description/tags **per Short** (from that Short's 3 prompts).
-
-## End message
+Only after **auto script** success:
 
 ```
-{cinematic} session-NN [shorts] — prompts 31-60 / 900
-Next: /veo-session-shorts cinematic
-```
-
-When complete:
-
-```
-{cinematic} [shorts] COMPLETE. /clear then /veo-session-shorts for next channel.
+{cinematic} session-NN [shorts] COMPLETE (900 prompts, 300 metadata).
+/clear then .\tools\veo_session_auto.ps1 -Mode shorts for next channel.
 ```

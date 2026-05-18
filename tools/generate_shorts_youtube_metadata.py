@@ -264,23 +264,20 @@ def load_prompt_voice(path: Path) -> dict[int, tuple[str, str]]:
     return {int(m.group(1)): (m.group(2).strip(), m.group(3).strip()) for m in BLOCK.finditer(text)}
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--prompts", type=Path, default=DEFAULT_PROMPTS)
-    ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
-    ap.add_argument("--max-scenes", type=int, default=0)
-    args = ap.parse_args()
+def load_used_titles(path: Path) -> set[str]:
+    if not path.is_file():
+        return set()
+    used: set[str] = set()
+    for m in re.finditer(r"(?m)^Title:\s*\n(.+)$", path.read_text(encoding="utf-8")):
+        used.add(m.group(1).strip().lower()[:60])
+    return used
 
-    pv = load_prompt_voice(args.prompts)
-    max_prompt = max(pv.keys()) if pv else 0
-    max_shorts = max_prompt // 3
-    if args.max_scenes and args.max_scenes > 0:
-        max_shorts = min(max_shorts, args.max_scenes // 3)
 
-    lines: list[str] = [
-        "# Cinematic Shorts - metadata for YouTube Studio",
+def header_lines(channel: str) -> list[str]:
+    return [
+        f"# {channel} Shorts — metadata for YouTube Studio",
         "",
-        "Channel: Cinematic (@SubscribeCinematic)",
+        f"Channel: {channel}",
         "",
         "Per-Short unique titles/tags — see docs/YOUTUBE-METADATA-SPEC.md",
         "",
@@ -290,38 +287,77 @@ def main() -> None:
         "",
     ]
 
-    used_titles: set[str] = set()
 
-    for n in range(1, max_shorts + 1):
-        a, b, c = 3 * n - 2, 3 * n - 1, 3 * n
-        pa, va = pv.get(a, ("", ""))
-        pb, vb = pv.get(b, ("", ""))
-        pc, vc = pv.get(c, ("", ""))
+def short_block_lines(
+    n: int,
+    pv: dict[int, tuple[str, str]],
+    used_titles: set[str],
+) -> list[str]:
+    a, b, c = 3 * n - 2, 3 * n - 1, 3 * n
+    pa, va = pv.get(a, ("", ""))
+    pb, vb = pv.get(b, ("", ""))
+    pc, vc = pv.get(c, ("", ""))
 
-        title = make_title(n, pa, pb, pc, va, vb, vc, used_titles)
-        desc = make_description(n, pa, pb, pc, va, vb, vc)
-        tags = make_tags(n, pa, pb, pc)
+    title = make_title(n, pa, pb, pc, va, vb, vc, used_titles)
+    desc = make_description(n, pa, pb, pc, va, vb, vc)
+    tags = make_tags(n, pa, pb, pc)
 
-        lines.append(f"## Short #{n:03d} - short-{n:03d}.mp4 - prompts {a}-{c}")
-        lines.append("")
-        lines.append("Title:")
-        lines.append(title)
-        lines.append("")
-        lines.append("Description:")
-        lines.append(desc)
-        lines.append("")
-        lines.append("Tags:")
-        lines.append(tags)
-        lines.append("")
-        lines.append("---")
-        lines.append("")
+    return [
+        f"## Short #{n:03d} - short-{n:03d}.mp4 - prompts {a}-{c}",
+        "",
+        "Title:",
+        title,
+        "",
+        "Description:",
+        desc,
+        "",
+        "Tags:",
+        tags,
+        "",
+        "---",
+        "",
+    ]
 
-    lines.append("<!-- Regenerate: python tools/generate_shorts_youtube_metadata.py -->")
-    lines.append("")
 
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--prompts", type=Path, default=DEFAULT_PROMPTS)
+    ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    ap.add_argument("--max-scenes", type=int, default=0)
+    ap.add_argument("--from-short", type=int, default=1)
+    ap.add_argument("--to-short", type=int, default=0)
+    ap.add_argument("--append", action="store_true")
+    ap.add_argument("--channel", type=str, default="Cinematic")
+    args = ap.parse_args()
+
+    pv = load_prompt_voice(args.prompts)
+    max_prompt = max(pv.keys()) if pv else 0
+    max_shorts = max_prompt // 3
+    if args.max_scenes and args.max_scenes > 0:
+        max_shorts = min(max_shorts, args.max_scenes // 3)
+
+    start = max(1, args.from_short)
+    end = args.to_short if args.to_short > 0 else max_shorts
+    end = min(end, max_shorts)
+    if start > end:
+        print(f"No shorts to write (from={start}, to={end}, max={max_shorts})")
+        return
+
+    used_titles = load_used_titles(args.out) if args.append else set()
+    lines: list[str] = [] if args.append else header_lines(args.channel)
+
+    for n in range(start, end + 1):
+        lines.extend(short_block_lines(n, pv, used_titles))
+
+    body = "\n".join(lines).rstrip() + "\n"
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
-    print(f"Wrote {max_shorts} unique Short blocks -> {args.out}")
+    if args.append and args.out.is_file():
+        existing = args.out.read_text(encoding="utf-8").rstrip()
+        args.out.write_text(existing + "\n\n" + body, encoding="utf-8")
+    else:
+        footer = "<!-- Regenerate: python tools/generate_shorts_youtube_metadata.py -->\n"
+        args.out.write_text(body + "\n" + footer, encoding="utf-8")
+    print(f"Wrote Shorts #{start:03d}-#{end:03d} ({end - start + 1} blocks) -> {args.out}")
 
 
 if __name__ == "__main__":

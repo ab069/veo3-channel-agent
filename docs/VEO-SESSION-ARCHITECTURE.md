@@ -78,8 +78,9 @@ flowchart TB
   G --> INFO
   G --> PROG
   G -->|scaffold| SESS
-  G -->|resume| WRITE[Write 10 items x3 max 30 per turn]
-  WRITE --> PROG
+  G -->|resume| LOOP[Loop: pack 30 prompts + 10 metadata]
+  LOOP --> PROG
+  PROG -->|not complete| LOOP
   PROG -->|complete| C
   C -->|new chat| S
   C -->|new chat| L
@@ -95,9 +96,13 @@ flowchart TB
 1. **Guards** — channel exists, mode ok, no overwrite/regression.
 2. **Pick channel** — arg or `veo_session_next_channel.ps1 -Mode shorts`.
 3. **Resume or scaffold** — `session-NN` with `"mode": "shorts"` in `.progress.json`.
-4. **Phase 1** — append prompts **10 at a time** (max **30**/turn) until **900** portrait prompts.
-5. **Phase 2** — append **10 Short metadata blocks**/turn until **300**.
-6. **Done** — `status: complete`. Message: run **`/clear`**, then `/veo-session-shorts` for next channel.
+4. **Unattended (recommended):** `.\tools\veo_session_auto.ps1 -Channel {ch} -Mode shorts`  
+   - Loops: generate/append **pack** (30 prompts) → **metadata** (10 Shorts) → repeat until **900 + 300**.  
+   - Prints **COMPLETE** once; user does **not** type `continue`.
+5. **Chat-only (slow):** `/veo-session-shorts` — agent should run the auto script, not stop after 30 hand-written prompts.
+6. **Done** — `/clear` → auto script for next channel.
+
+Progress **interleaves** metadata after each pack (30 prompts → 10 metadata).
 
 **Does not create:** long prompts, long metadata.
 
@@ -163,7 +168,7 @@ Run **before every write**:
 | Session complete | Re-run without `-Force` |
 | Prompt count regression | File has fewer prompts than `.progress.json` (corruption) |
 | Wrong phase file | Writing long prompts while phase is `metadata-shorts` |
-| Batch too large | More than 30 new items in one turn |
+| Batch too large | More than 90 prompts planned in one guard call (still 10 per append) |
 | Numbering gap | Next prompt must be `N+1` (no skips/duplicates) |
 | Missing spec reads | Agent must read `VEO3-PROMPT-SPEC` + `YOUTUBE-METADATA-SPEC` for metadata |
 
@@ -179,23 +184,25 @@ Run **before every write**:
 
 ## Patch limits (all commands)
 
-| Item | Per append | Max per chat turn |
-|------|------------|-------------------|
-| Prompts | 10 | 30 |
-| Short metadata | 10 blocks | 30 |
-| Long metadata | 1–2 | 5 total |
+| Item | Per append | Per chat turn |
+|------|------------|----------------|
+| Prompts | 10 | **Loop** until channel complete (many packs OK) |
+| Short metadata | 10 blocks | After each 30 prompts (same loop) |
+| Long metadata | 1–2 | Long mode |
+
+**Why it used to stop at 30:** old command text said "max 30 per turn" — agents treated that as "stop." New rule: **one pack minimum, then keep going** until `Complete` or a hard stop.
 
 ---
 
 ## Typical timelines (one channel)
 
-| Command | ~Chat turns (30 items/turn) |
-|---------|----------------------------|
-| shorts only | ~30 prompts + ~10 metadata ≈ **40** turns |
-| long only | ~30 + 1 ≈ **31** turns |
-| both | ~60 + ~11 ≈ **71** turns |
+| Command | Work per channel | Chats |
+|---------|------------------|-------|
+| shorts only | 900 + 300 | **1** chat if context allows; else `continue` |
+| long only | 900 + 5 | same |
+| both | 1800 + 305 | same |
 
-Plan **`/clear`** between channels, not between every turn.
+Plan **`/clear`** between **channels**, not after every pack.
 
 ---
 

@@ -21,10 +21,9 @@ Pick the workflow you need:
 
 ## Same rules for all
 
-- **900** scenes per prompt file (written in **patches of 10**, max **30** per chat turn)
+- **900** scenes per prompt file — use **`.\tools\veo_session_auto.ps1`** (loops 30+metadata until done; no `continue`)
 - Resume via `tools/veo_session_progress.ps1 -Mode shorts|long|both`
-- Channel `info.md` stays at channel root
-- After one channel finishes: **`/clear`** → run the same command again
+- After one channel finishes: **`/clear`** → run auto script again for next channel
 
 **Architecture + guards:** `docs/VEO-SESSION-ARCHITECTURE.md`  
 **Shared rules:** `.cursor/commands/veo-session-shared.md` (run `veo_session_guards.ps1` before every write)

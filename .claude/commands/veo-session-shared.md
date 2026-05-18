@@ -1,95 +1,60 @@
 # veo-session — shared rules (all modes)
 
-Used by `/veo-session-shorts`, `/veo-session-long`, `/veo-session-both`, and `/veo-session`.
-
 **Architecture:** `docs/VEO-SESSION-ARCHITECTURE.md`
 
-## Step 0 — Guards (MANDATORY before any write)
+## Chat vs unattended (read this first)
+
+| Method | Command | Stops at 30? | You say `continue`? |
+|--------|---------|--------------|---------------------|
+| **Unattended (default)** | `.\tools\veo_session_auto.ps1 -Mode shorts\|long` | No — loops to 900 | **No** |
+| Chat-only AI writing | `/veo-session-shorts` without auto script | Often yes | Yes (annoying) |
+
+**User expectation:** one run → all 900 → one “done” message → use **`veo_session_auto.ps1`**.
+
+---
+
+## Step 0 — Guards (before scaffold or auto)
 
 ```powershell
 cd D:\veo3
 $g = .\tools\veo_session_guards.ps1 -Channel {channel} -Mode {shorts|long|both}
-$g | Format-List
 ```
 
 | If `$g.Ok` | Do |
 |------------|-----|
-| `$false` | **STOP.** Fix `$g.Errors`. Do not write files. |
-| `$true` + `Action=scaffold` | Run `$g.ScaffoldCommand` then continue. |
-| `$true` + `Action=resume` | Write only `Prompt $g.NextBatchStart` … `$g.NextBatchEnd` for `$g.Phase`. |
+| `$false` | **STOP.** Fix errors. |
+| `scaffold` | `.\tools\new_session_scaffold.ps1 -Channel {ch} -Mode {mode}` |
+| `resume` | `.\tools\veo_session_auto.ps1 -Channel {ch} -Mode {mode}` |
 
-**Never write if guards return errors.** Never skip guards to "go faster."
+---
 
-### Guard checklist (agent)
+## Patch writing (if not using auto script)
 
-- [ ] Channel has `info.md`
-- [ ] Command **mode** matches session (`shorts` / `long` / `both`)
-- [ ] Session not `complete` unless user asked to start new session
-- [ ] Max **30** new items this turn; **10** per `Add-Content`
-- [ ] Correct file for `$g.Phase` only
-- [ ] Shorts: read last 9 prompts; 3 unique places/voices per Short
-- [ ] Metadata: unique per Short (`YOUTUBE-METADATA-SPEC.md`)
-- [ ] Channel complete → tell user `/clear` then same command (do not start next channel here)
+| File | Per append |
+|------|------------|
+| `prompts-shorts.md` | 10 prompts |
+| `youtube-metadata-shorts.md` | 10 blocks OR `veo_session_metadata_pack.ps1` |
 
-## Patch writing (every file)
+Never one Write with 900 lines.
 
-| File | Per append | Max per chat turn |
-|------|------------|-------------------|
-| `prompts-shorts.md` | 10 prompts | 30 |
-| `prompts-long-videos.md` | 10 prompts | 30 |
-| `youtube-metadata-shorts.md` | 10 Short blocks | 30 |
-| `youtube-metadata-long-videos.md` | 1-2 blocks | 5 total OK |
-| `plan.md` | 1 section | small file OK |
-
-Never one Write with 900 prompts or 300 metadata blocks.
-
-## Required reads
-
-1. `channels/{channel}/info.md`
-2. `channels/{channel}/plan.md` (if present)
-3. `docs/VEO3-PROMPT-SPEC.md`
-4. Example structure: `channels/cinematic/prompts-shorts.md` or `prompts-long-videos.md`
-5. **Metadata:** `docs/YOUTUBE-METADATA-SPEC.md` — unique per Short, not one template
-6. **Shorts prompts:** `docs/VEO3-PROMPT-SPEC.md` → **Shorts variety** — no duplicate Short (3 unique places/voices per triplet)
-
-## Prompt block (veo3.pk)
-
-```text
-Prompt N: [one line visual, semicolon segments]
-Voice: [one line, ~20-28 words]
+## Shorts pack cycle
 
 ```
-
-## PowerShell
-
-```powershell
-cd D:\veo3
-.\tools\veo_session_progress.ps1 -Channel {channel} -Mode {shorts|long|both}
-.\tools\new_session_scaffold.ps1 -Channel {channel} -Mode {shorts|long|both}
+30 prompts (3× Add-Content of 10) → metadata 10 Shorts → next pack …
 ```
 
-Append:
-
-```powershell
-@" ... "@ | Add-Content -Path "...\prompts-shorts.md" -Encoding utf8
-```
-
-## Resume
-
-- Continue at `NextBatchStart` from progress script.
-- Do not overwrite finished prompts.
-- If `SessionDir` missing for active work: run scaffold with correct `-Mode`.
+Auto script does this in a `while` loop.
 
 ## Channel complete → next channel
 
-When progress `Complete` = true for this **mode**:
+1. Auto script prints **COMPLETE**
+2. User: **`/clear`**
+3. `.\tools\veo_session_auto.ps1 -Mode {mode}` (next channel)
 
-1. Tell user: **`/clear`** (new chat)
-2. Then run the same command again (no channel arg) for next channel in queue.
+## Required reads (AI-crafted packs only)
 
-## Queue (10–100 channels)
+`info.md`, `VEO3-PROMPT-SPEC.md`, `YOUTUBE-METADATA-SPEC.md`
 
-- Every `channels/{name}/` with `info.md` is auto-discovered.
-- `channels/.veo-session-queue.json` — **optional** priority list (cinematic first); unlisted channels run A–Z.
-- Status: `.\tools\veo_session_list.ps1 -Mode shorts|long|both`
-- One channel per wave; **`/clear`** between channels at scale.
+## Queue
+
+`.\tools\veo_session_list.ps1 -Mode shorts`

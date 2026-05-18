@@ -86,7 +86,17 @@ $nextStart = 0
 $nextEnd = 0
 
 if ($Mode -eq 'shorts' -or $Mode -eq 'both') {
-    if ($shorts -lt $targetScenes) {
+    # Interleaved packs: after each 30 prompts, metadata for those 10 Shorts must exist
+    # before writing the next prompt batch.
+    $packComplete = ($shorts -gt 0) -and (($shorts % 30) -eq 0)
+    $metaOwedForPrompts = [Math]::Min([int]($shorts / 3), $targetShortsMeta)
+
+    if ($packComplete -and ($metaShorts -lt $metaOwedForPrompts)) {
+        $phase = 'metadata-shorts'
+        $nextStart = $metaShorts + 1
+        $nextEnd = [Math]::Min($metaShorts + 10, $metaOwedForPrompts)
+    }
+    elseif ($shorts -lt $targetScenes) {
         $phase = 'prompts-shorts'
         $nextStart = $shorts + 1
         $nextEnd = [Math]::Min($shorts + 30, $targetScenes)

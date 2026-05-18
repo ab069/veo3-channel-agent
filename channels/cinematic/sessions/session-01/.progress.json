@@ -1,0 +1,17 @@
+﻿{
+    "channel":  "cinematic",
+    "metadata_long":  0,
+    "next_batch_end":  0,
+    "shorts_prompts":  900,
+    "updated":  "2026-05-17T11:07:57.4932998+05:00",
+    "metadata_shorts":  300,
+    "target_shorts_meta":  300,
+    "target_scenes":  900,
+    "status":  "complete",
+    "next_batch_start":  0,
+    "mode":  "shorts",
+    "phase":  "complete",
+    "long_prompts":  0,
+    "target_long_meta":  5,
+    "session":  "session-01"
+}
